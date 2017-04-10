@@ -1,83 +1,43 @@
 package canvas.pixel;
 
-import canvas.db.RethinkDBConnectionFactory;
-import com.rethinkdb.RethinkDB;
-import com.rethinkdb.net.Cursor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import canvas.db.PixelRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/pixels")
 public class PixelController {
-    private final RethinkDBConnectionFactory connectionFactory;
-    private static final RethinkDB r = RethinkDB.r;
-    private final Logger log = LoggerFactory.getLogger(PixelController.class);
+    @Autowired
+    private PixelRepository pixelRepository;
+    private final SimpMessagingTemplate webSocket;
 
     @Autowired
-    public PixelController(RethinkDBConnectionFactory connectionFactory) {
-        this.connectionFactory = connectionFactory;
+    public PixelController(SimpMessagingTemplate webSocket) {
+        this.webSocket = webSocket;
     }
 
     @RequestMapping(method = RequestMethod.POST)
-    public void postPixel(@RequestBody Pixel pixel) {
-        System.out.println("Post message " + pixel.toString());
+    public void postPixel(@RequestBody Pixel newPixel) {
+        List<Pixel> pixels = pixelRepository.findByXAndY(newPixel.getX(), newPixel.getY());
 
-        Long x = pixel.getX();
-        Long y = pixel.getY();
-        String color = pixel.getColor();
-
-        // get canvas at x and y position
-        Cursor<Pixel> pixels = r.db("canvas")
-                .table("pixels")
-                .filter(
-                row -> row.g("x").eq(x).and(
-                        row.g("y").eq(y)
-                )
-        ).run(connectionFactory.createConnection());
-
-        if(pixels.toList().isEmpty())
-        {
-            System.out.println("  New canvas " + pixel);
-            // if no pixels are at x and y, insert
-            Object run = r.db("canvas")
-                    .table("pixels")
-                    .insert(pixel)
-                    .run(connectionFactory.createConnection());
-            log.info("Insert {}", run);
+        if(pixels.isEmpty()) {
+            pixelRepository.save(newPixel);
         }
         else
         {
-            System.out.println("  Update canvas " + pixel);
-
-            // if a canvas is at x and y, update the color
-            r.db("canvas")
-                    .table("pixels")
-                    .filter(
-                        row -> row.g("x").eq(x).and(
-                                row.g("y").eq(y)
-                        )
-                    ).update(
-                            r.hashMap("color", color)
-                    )
-                    .run(connectionFactory.createConnection());
+            Pixel oldPixel = pixels.get(0);
+            oldPixel.setColor(newPixel.getColor());
+            pixelRepository.save(oldPixel);
         }
+
+        webSocket.convertAndSend("/topic/canvas", newPixel);
     }
 
     @RequestMapping(method = RequestMethod.GET)
-    public List<Pixel> getPixels() {
-        System.out.println("get pixels");
-
-        Cursor<Pixel> cur = r.db("canvas")
-                .table("pixels")
-                .run(connectionFactory.createConnection(), Pixel.class);
-
-        return cur.toList();
+    public @ResponseBody Iterable<Pixel> getPixels() {
+        return pixelRepository.findAll();
     }
 }

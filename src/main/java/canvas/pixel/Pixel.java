@@ -1,34 +1,26 @@
 package canvas.pixel;
 
-public class Pixel {
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 
-    private Long x;
-    private Long y;
+@Entity
+public class Pixel {
+    @Id
+    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    private Integer id;
+    private Integer x;
+    private Integer y;
     private String color;
 
     public Pixel() {
     }
 
-    public Pixel(Long x, Long y, String color) {
+    public Pixel(Integer x, Integer y, String color) {
         this.x = x;
         this.y = y;
         this.color = color;
-    }
-
-    public Long getX() {
-        return x;
-    }
-
-    public void setX(Long x) {
-        this.x = x;
-    }
-
-    public Long getY() {
-        return y;
-    }
-
-    public void setY(Long y) {
-        this.y = y;
     }
 
     public String getColor() {
@@ -41,5 +33,31 @@ public class Pixel {
 
     public String toString() {
         return x + ", " + y + ": " + color;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public Integer getX(){
+        return x;
+    }
+
+    public Integer getY() {
+        return y;
+    }
+
+    public void setY(Integer y)
+    {
+        this.y = y;
+    }
+
+    public void setX(Integer x)
+    {
+        this.x = x;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
     }
 }

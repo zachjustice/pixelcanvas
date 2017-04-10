@@ -8,8 +8,9 @@ buildscript {
 }
 
 apply plugin: 'java'
-apply plugin: 'eclipse'
+apply plugin: 'idea'
 apply plugin: 'org.springframework.boot'
+
 
 jar {
     baseName = 'canvas'
@@ -27,14 +28,16 @@ dependencies {
     compile("org.springframework.boot:spring-boot-starter-websocket")
     compile('org.springframework.boot:spring-boot-starter-web')
     compile('org.springframework.boot:spring-boot-devtools')
+    compile('org.springframework.boot:spring-boot-starter-data-jpa')
+
 
     compile("org.webjars:webjars-locator")
     compile("org.webjars:sockjs-client:1.0.2")
     compile("org.webjars:stomp-websocket:2.3.3")
     compile("org.webjars:bootstrap:3.3.7")
     compile("org.webjars:jquery:3.1.0")
-    compile group: 'com.rethinkdb', name: 'rethinkdb-driver', version: '2.3.3'
+    compile group: 'org.postgresql', name: 'postgresql', version: '9.4-1201-jdbc4'
+
 
     testCompile("org.springframework.boot:spring-boot-starter-test")
 }
-
